@@ -18,21 +18,20 @@ class Client:
         self.window = Tk()
         self.window.withdraw()
 
-        self.login_window = Toplevel()
 
-        # self.nickname = simpledialog.askstring("Login", "Enter your login: ", parent = msg)
-        # self.nickname = simpledialog.askstring("Password", "Enter your password:", show = '*')
+        self.login_window = Toplevel()
+        self.login_window.geometry("300x300")
+        self.login_window.title("Login")
 
         self.login_window.configure(bg="lightgray")
 
-        self.login_label = tkinter.Label(self.login_window, text="Login or register", bg="blue", width="200", height="2",
-                                         font=("Calibri", 13)).pack(padx=20, pady=5)
+        self.login_label = tkinter.Label(self.login_window, text="Login or register", bg="lightblue", width="200", height="2",
+                                         font=("Calibri", 13)).pack(padx=10, pady=10)
 
-        self.login_button = tkinter.Button(self.login_window, text="Login", height="2", width="30", command=self.login).pack(
-            padx=20, pady=5)
+        self.login_button = tkinter.Button(self.login_window, text="Login", height="2", width="30", command=self.login).pack(padx=10, pady=10)
 
         self.register_button = tkinter.Button(self.login_window, text="Register", height="2", width="30",
-                                              command=self.register).pack(padx=20, pady=5)
+                                              command=self.register).pack(padx=10, pady=10)
 
         self.window.mainloop()
 
@@ -40,9 +39,10 @@ class Client:
     def register(self):
         self.register_screen = tkinter.Toplevel(self.login_window)
         self.register_screen.title("Register")
-        self.register_screen.geometry("200x200")
+        self.register_screen.geometry("300x300")
+        self.register_screen.configure(bg = "lightgray")
 
-        self.register_label = tkinter.Label(self.register_screen, text="Please enter details below", bg="blue").pack(padx=20, pady=5)
+        self.register_label = tkinter.Label(self.register_screen, text="Please enter details below", bg="lightblue").pack(padx=20, pady=5)
 
         self.username = tkinter.StringVar(self.register_screen)
         self.password = tkinter.StringVar(self.register_screen)
@@ -59,7 +59,7 @@ class Client:
         self.password_entry = tkinter.Entry(self.register_screen, textvariable=self.password, show='*')
         self.password_entry.pack(padx=20, pady=5)
 
-        self.reg_button = tkinter.Button(self.register_screen, text="Register", width=10, height=1, bg="blue", command = self.register_user).pack(padx=20, pady=5)
+        self.reg_button = tkinter.Button(self.register_screen, text="Register", width=10, height=1, bg="lightblue", command = self.register_user).pack(padx=20, pady=5)
 
 
     def register_user(self):
@@ -94,7 +94,7 @@ class Client:
         self.login_sucess_screen = tkinter.Toplevel(self.login_screen)
         self.login_sucess_screen.title("Success")
         self.login_sucess_screen.geometry("150x100")
-        Label(self.login_sucess_screen, text = "Login success").pack()
+        Label(self.login_sucess_screen, text = "Login success", fg = "green", font=("calibri", 11)).pack()
 
         Button(self.login_sucess_screen, text = "OK", command = self.delete_login_success).pack()
 
@@ -108,7 +108,7 @@ class Client:
         self.password_not_recog_screen.title("Unsuccess")
         self.password_not_recog_screen.geometry("150x100")
 
-        Label(self.password_not_recog_screen, text = "Invalid password").pack()
+        Label(self.password_not_recog_screen, text = "Invalid password", fg = "red", font=("calibri", 11)).pack()
         Button(self.password_not_recog_screen, text = "OK", command = self.delete_password_not_recognised).pack()
 
     def delete_user_not_found_screen(self):
@@ -119,7 +119,7 @@ class Client:
         self.user_not_found_screen.title("Unsuccess")
         self.user_not_found_screen.geometry("150x100")
 
-        Label(self.user_not_found_screen, text = "User not found").pack()
+        Label(self.user_not_found_screen, text = "User not found", fg = "red", font=("calibri", 11)).pack()
         Button(self.user_not_found_screen, text = "OK", command = self.delete_user_not_found_screen).pack()
 
     def login_verification(self):
@@ -148,20 +148,21 @@ class Client:
     def login(self):
         self.login_screen = tkinter.Toplevel(self.login_window)
         self.login_screen.title("Login")
-        self.login_screen.geometry("200x200")
+        self.login_screen.geometry("300x300")
 
-        self.login_lab = tkinter.Label(self.login_screen, text="Please enter details below to login", bg="blue").pack(padx=20, pady=5)
+
+        self.login_lab = tkinter.Label(self.login_screen, text="Please enter details below to login", bg="lightblue").pack(padx=20, pady=5)
 
         self.username_verify = tkinter.StringVar(self.login_screen)
         self.password_verify = tkinter.StringVar(self.login_screen)
 
-        Label(self.login_screen, text = "Username * ").pack()
+        Label(self.login_screen, text = "Username * ").pack(padx=10, pady=10)
         self.username_login_entry = tkinter.Entry(self.login_screen, textvariable = self.username_verify)
-        self.username_login_entry.pack()
+        self.username_login_entry.pack(padx=10,pady=10)
 
-        Label(self.login_screen, text = "Password * ").pack()
+        Label(self.login_screen, text = "Password * ").pack(padx=10,pady=10)
         self.password_login_entry = tkinter.Entry(self.login_screen, textvariable = self.password_verify, show = '*')
-        self.password_login_entry.pack()
+        self.password_login_entry.pack(padx=10,pady=10)
 
         Button(self.login_screen, text = "Login", width = 10, height = 1, command = self.login_verification).pack()
 
