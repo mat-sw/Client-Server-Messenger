@@ -15,25 +15,30 @@ class Client:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((host, port))
 
-        msg = tkinter.Tk()
-        msg.geometry("200x200")
-        msg.title("Login")
-        msg.withdraw()
+        self.window = Tk()
+        self.window.withdraw()
+
+        self.login_window = Toplevel()
 
         # self.nickname = simpledialog.askstring("Login", "Enter your login: ", parent = msg)
         # self.nickname = simpledialog.askstring("Password", "Enter your password:", show = '*')
 
-        self.gui_done = False
-        self.running = True
+        self.login_window.configure(bg="lightgray")
 
-        gui_thread = threading.Thread(target=self.gui_loop)
-        receive_thread = threading.Thread(target=self.receive)
+        self.login_label = tkinter.Label(self.login_window, text="Login or register", bg="blue", width="200", height="2",
+                                         font=("Calibri", 13)).pack(padx=20, pady=5)
 
-        gui_thread.start()
-        receive_thread.start()
+        self.login_button = tkinter.Button(self.login_window, text="Login", height="2", width="30", command=self.login).pack(
+            padx=20, pady=5)
+
+        self.register_button = tkinter.Button(self.login_window, text="Register", height="2", width="30",
+                                              command=self.register).pack(padx=20, pady=5)
+
+        self.window.mainloop()
+
 
     def register(self):
-        self.register_screen = tkinter.Toplevel(self.win)
+        self.register_screen = tkinter.Toplevel(self.login_window)
         self.register_screen.title("Register")
         self.register_screen.geometry("200x200")
 
@@ -75,6 +80,15 @@ class Client:
 
     def delete_login_success(self):
         self.login_sucess_screen.destroy()
+        self.login_window.destroy()
+        self.gui_done = False
+        self.running = True
+
+        gui_thread = threading.Thread(target=self.gui_loop)
+        receive_thread = threading.Thread(target=self.receive)
+
+        gui_thread.start()
+        receive_thread.start()
 
     def login_sucess(self):
         self.login_sucess_screen = tkinter.Toplevel(self.login_screen)
@@ -123,6 +137,7 @@ class Client:
             verify = file1.read().splitlines()
             if password1 in verify:
                 self.login_sucess()
+                self.nickname = username1
             else:
                 self.password_not_recognised()
 
@@ -131,7 +146,7 @@ class Client:
 
 
     def login(self):
-        self.login_screen = tkinter.Toplevel(self.win)
+        self.login_screen = tkinter.Toplevel(self.login_window)
         self.login_screen.title("Login")
         self.login_screen.geometry("200x200")
 
@@ -154,37 +169,27 @@ class Client:
 
 
     def gui_loop(self):
-
-
         self.win = tkinter.Tk()
         self.win.configure(bg="lightgray")
 
-        self.login_label = tkinter.Label(self.win, text="Login or register", bg="blue", width="300", height="2",
-                                         font=("Calibri", 13)).pack(padx=20, pady=5)
+        self.chat_label = tkinter.Label(self.win, text="Chat:", bg="lightgray")
+        self.chat_label.config(font=("Arial", 12))
+        self.chat_label.pack(padx=20, pady=5)
 
-        self.login_button = tkinter.Button(self.win, text="Login", height="2", width="30", command = self.login).pack(padx=20, pady=5)
+        self.text_area = tkinter.scrolledtext.ScrolledText(self.win)
+        self.text_area.pack(padx=20, pady=5)
+        self.text_area.config(state='disabled')
 
-        self.register_button = tkinter.Button(self.win, text="Register", height="2", width="30", command = self.register).pack(padx=20, pady=5)
+        self.msg_label = tkinter.Label(self.win, text="Message:", bg="lightgray")
+        self.msg_label.config(font=("Arial", 12))
+        self.msg_label.pack(padx=20, pady=5)
 
+        self.input_area = tkinter.Text(self.win, height=3)
+        self.input_area.pack(padx=20, pady=5)
 
-        # self.chat_label = tkinter.Label(self.win, text="Chat:", bg="lightgray")
-        # self.chat_label.config(font=("Arial", 12))
-        # self.chat_label.pack(padx=20, pady=5)
-        #
-        # self.text_area = tkinter.scrolledtext.ScrolledText(self.win)
-        # self.text_area.pack(padx=20, pady=5)
-        # self.text_area.config(state='disabled')
-        #
-        # self.msg_label = tkinter.Label(self.win, text="Message:", bg="lightgray")
-        # self.msg_label.config(font=("Arial", 12))
-        # self.msg_label.pack(padx=20, pady=5)
-        #
-        # self.input_area = tkinter.Text(self.win, height=3)
-        # self.input_area.pack(padx=20, pady=5)
-        #
-        # self.send_button = tkinter.Button(self.win, text="Send:", command=self.write)
-        # self.send_button.config(font=("Arial", 12))
-        # self.send_button.pack(padx=20, pady=5)
+        self.send_button = tkinter.Button(self.win, text="Send:", command=self.write)
+        self.send_button.config(font=("Arial", 12))
+        self.send_button.pack(padx=20, pady=5)
 
 
         self.gui_done = True
