@@ -138,6 +138,7 @@ class Client:
             if password1 in verify:
                 self.login_sucess()
                 self.nickname = username1
+                self.sock.send(self.nickname.encode('utf-8'))
             else:
                 self.password_not_recognised()
 
@@ -188,7 +189,7 @@ class Client:
         self.input_area = tkinter.Text(self.win, height=3)
         self.input_area.pack(padx=20, pady=5)
 
-        self.send_button = tkinter.Button(self.win, text="Send:", command=self.write)
+        self.send_button = tkinter.Button(self.win, text="Send", command=self.write)
         self.send_button.config(font=("Arial", 12))
         self.send_button.pack(padx=20, pady=5)
 
@@ -204,7 +205,7 @@ class Client:
         exit(0)
 
     def write(self):
-        msg = f"{self.nickname} : {self.input_area.get('1.0', 'end')}"
+        msg = f"{self.nickname} -> julia : {self.input_area.get('1.0', 'end')}"
         self.sock.send(msg.encode('utf-8'))
         self.input_area.delete('1.0', 'end')
 
@@ -217,6 +218,7 @@ class Client:
                 else:
                     if self.gui_done:
                         self.text_area.config(state='normal')
+                        msg += '\n'
                         self.text_area.insert('end', msg)
                         self.text_area.yview('end')
                         self.text_area.config(state='disabled')
@@ -228,3 +230,4 @@ class Client:
                 break
 
 client = Client(HOST, PORT)
+exit(0)

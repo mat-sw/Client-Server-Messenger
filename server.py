@@ -54,4 +54,7 @@ def receive():
         thread.start()
 
 
-receive()
+try:
+    receive()
+except KeyboardInterrupt:
+    exit
