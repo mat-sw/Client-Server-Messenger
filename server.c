@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <signal.h>
+// COMPILE gcc program.c -lpthread -Wall -o outfile
 
 #define MAX_CLIENTS 100
 #define BUFF_SIZE 2048
