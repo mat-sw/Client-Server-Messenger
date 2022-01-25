@@ -1,3 +1,4 @@
+from email.errors import FirstHeaderLineIsContinuationDefect
 import os
 import socket
 import threading
@@ -5,9 +6,12 @@ import tkinter
 import tkinter.scrolledtext
 from tkinter import simpledialog
 from tkinter import *
+import glob
 
 HOST = '127.0.0.1'
 PORT = 9090
+
+
 
 class Client:
 
@@ -18,6 +22,7 @@ class Client:
         self.window = Tk()
         self.window.withdraw()
 
+        self.chats = []
 
         self.login_window = Toplevel()
         self.login_window.geometry("300x300")
@@ -66,7 +71,9 @@ class Client:
         username_info = self.username.get()
         password_info = self.password.get()
 
-        file = open(username_info, "w")
+        filename = "%s.txt" % username_info
+
+        file = open(filename, "w")
 
         file.write(username_info + "\n")
         file.write(password_info)
@@ -77,18 +84,30 @@ class Client:
 
         Label(self.register_screen, text = "Registration Success", fg = "green", font=("calibri", 11)).pack()
 
-
-    def delete_login_success(self):
-        self.login_sucess_screen.destroy()
-        self.login_window.destroy()
+    def start_messaging(self, friend):
         self.gui_done = False
         self.running = True
 
-        gui_thread = threading.Thread(target=self.gui_loop)
+        gui_thread = threading.Thread(target=self.gui_loop(friend))
         receive_thread = threading.Thread(target=self.receive)
 
         gui_thread.start()
         receive_thread.start()
+
+
+    def delete_login_success(self):
+        self.friends_window = tkinter.Toplevel(self.login_sucess_screen)
+        self.friends_window.title("Znajomi")
+        self.friends_window.geometry("500x500")
+
+        Label(self.friends_window, text = "Wybierz znajomego, do którego chcesz napisać", background="lightblue",
+        width="200", height="2", font=("Calibri", 14)).pack(padx=5, pady=5)
+
+        for n in self.list_of_files:
+            splitted = n.split(".", 1)
+            Label(self.friends_window, text = f"Użytkownik: {splitted[0]}", font=("Calibri", 13)).pack()
+            Button(self.friends_window, text = f"Napisz do {splitted[0]}", font=("Calibri", 13), command =lambda splitted=splitted: self.start_messaging(splitted[0])).pack()
+
 
     def login_sucess(self):
         self.login_sucess_screen = tkinter.Toplevel(self.login_screen)
@@ -129,10 +148,13 @@ class Client:
         self.username_login_entry.delete(0, END)
         self.password_login_entry.delete(0, END)
 
-        self.list_of_files = os.listdir()
+        filename = "%s.txt" % username1
 
-        if username1 in self.list_of_files:
-            file1 = open(username1, "r")
+        self.list_of_files = [f for f in os.listdir() if f.endswith('.txt')]
+        print(self.list_of_files)
+
+        if filename in self.list_of_files:
+            file1 = open(filename, "r")
 
             verify = file1.read().splitlines()
             if password1 in verify:
@@ -169,12 +191,14 @@ class Client:
 
 
 
-
-    def gui_loop(self):
+    def gui_loop(self, friend):
         self.win = tkinter.Tk()
         self.win.configure(bg="lightgray")
 
-        self.chat_label = tkinter.Label(self.win, text="Chat:", bg="lightgray")
+        self.chats.append(friend)
+        
+        self.friend = friend
+        self.chat_label = tkinter.Label(self.win, text=f"Chat with {friend}:", bg="lightgray")
         self.chat_label.config(font=("Arial", 12))
         self.chat_label.pack(padx=20, pady=5)
 
@@ -189,10 +213,9 @@ class Client:
         self.input_area = tkinter.Text(self.win, height=3)
         self.input_area.pack(padx=20, pady=5)
 
-        self.send_button = tkinter.Button(self.win, text="Send", command=self.write)
+        self.send_button = tkinter.Button(self.win, text="Send", command=lambda :self.write())
         self.send_button.config(font=("Arial", 12))
         self.send_button.pack(padx=20, pady=5)
-
 
         self.gui_done = True
         self.win.protocol("WM_DELETE", self.stop)
@@ -205,7 +228,7 @@ class Client:
         exit(0)
 
     def write(self):
-        msg = f"{self.nickname} -> julia : {self.input_area.get('1.0', 'end')}"
+        msg = f"{self.nickname} -> {self.friend} : {self.input_area.get('1.0', 'end')}"
         self.sock.send(msg.encode('utf-8'))
         self.input_area.delete('1.0', 'end')
 
