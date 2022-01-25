@@ -80,7 +80,7 @@ void * socketThread(void *arg) {
         int receiver_start = 0, receiver_end = 0;
         n = recv(cli->sockfd, client_message, BUFF_SIZE, 0);
         if(n < 1) break;
-        printf("RECEIVED: %s", client_message);
+        printf("RECEIVED: %s\n", client_message);
 
         char *message = malloc(BUFF_SIZE);
         char *receiver = malloc(32*4);
@@ -96,10 +96,10 @@ void * socketThread(void *arg) {
         }
         
         strncpy(receiver, message + receiver_start, receiver_end - receiver_start);
-        strncpy(message_out, message + receiver_end + 3, strlen(message) - receiver_end - 4);
+        strncpy(message_out, message + receiver_end + 3, strlen(message) - receiver_end - 3);
         /* Prepares message to send */
-        sprintf(message, "%s : %s\n", name, message_out);
-        printf("SENDING: %s", message);
+        sprintf(message, "%s : %s", name, message_out);
+        printf("SENDING: %s\n", message);
         /* Looking for the receiver and sends to him */
         for (int i = 0; i < cli_count; i++){
             if (!strcmp(clients[i]->name, receiver)) {
@@ -107,6 +107,7 @@ void * socketThread(void *arg) {
                 break;
             }
         }
+        // printf("SENDING: %s", message);
         /* Sends message back to sender*/
         send(cli->sockfd, message, BUFF_SIZE, 0);
         memset(&client_message, 0, BUFF_SIZE);
@@ -126,7 +127,7 @@ int main(){
     struct sockaddr_in cli_addr;
 
     //Create the socket. 
-    serverSocket = socket(PF_INET, SOCK_STREAM, 0);
+    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     // Configure settings of the server address struct
     serverAddr.sin_family = AF_INET; 

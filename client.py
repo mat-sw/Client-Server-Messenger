@@ -18,6 +18,7 @@ class Client:
     def __init__(self, host, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((host, port))
+        self.send_from_enter = False
 
         self.window = Tk()
         self.window.withdraw()
@@ -87,18 +88,21 @@ class Client:
     def start_messaging(self, friend):
         self.gui_done = False
         self.running = True
-
-        gui_thread = threading.Thread(target=self.gui_loop(friend))
+        self.friend = friend
+        
+        gui_thread = threading.Thread(target=self.gui_loop)
         receive_thread = threading.Thread(target=self.receive)
-
         gui_thread.start()
         receive_thread.start()
+        print("receive")
 
 
     def delete_login_success(self):
-        self.friends_window = tkinter.Toplevel(self.login_sucess_screen)
-        self.friends_window.title("Znajomi")
+        self.login_window.destroy()
+        self.friends_window = tkinter.Tk()
+        self.friends_window.title(f"{self.nickname}'s friends")
         self.friends_window.geometry("500x500")
+        self.running = True
 
         Label(self.friends_window, text = "Wybierz znajomego, do którego chcesz napisać", background="lightblue",
         width="200", height="2", font=("Calibri", 14)).pack(padx=5, pady=5)
@@ -106,7 +110,7 @@ class Client:
         for n in self.list_of_files:
             splitted = n.split(".", 1)
             Label(self.friends_window, text = f"Użytkownik: {splitted[0]}", font=("Calibri", 13)).pack()
-            Button(self.friends_window, text = f"Napisz do {splitted[0]}", font=("Calibri", 13), command =lambda splitted=splitted: self.start_messaging(splitted[0])).pack()
+            Button(self.friends_window, text = f"Napisz do {splitted[0]}", font=("Calibri", 13), command = lambda splitted=splitted : self.start_messaging(splitted[0])).pack()
 
 
     def login_sucess(self):
@@ -160,7 +164,7 @@ class Client:
             if password1 in verify:
                 self.login_sucess()
                 self.nickname = username1
-                self.sock.send(self.nickname.encode('utf-8'))
+                self.sock.send((self.nickname + '\0').encode('utf-8'))
             else:
                 self.password_not_recognised()
 
@@ -187,18 +191,19 @@ class Client:
         self.password_login_entry = tkinter.Entry(self.login_screen, textvariable = self.password_verify, show = '*')
         self.password_login_entry.pack(padx=10,pady=10)
 
-        Button(self.login_screen, text = "Login", width = 10, height = 1, command = self.login_verification).pack()
+        Button(self.login_screen, text = "Login", width = 10, height = 1, command=self.login_verification).pack()
 
 
 
-    def gui_loop(self, friend):
+    def gui_loop(self):
         self.win = tkinter.Tk()
+        self.win.title(f"{self.nickname}'s chat")
         self.win.configure(bg="lightgray")
+        self.win.bind('<Return>', self.send_on_click)
 
-        self.chats.append(friend)
+        self.chats.append(self.friend)
         
-        self.friend = friend
-        self.chat_label = tkinter.Label(self.win, text=f"Chat with {friend}:", bg="lightgray")
+        self.chat_label = tkinter.Label(self.win, text=f"Chat with {self.friend}:", bg="lightgray")
         self.chat_label.config(font=("Arial", 12))
         self.chat_label.pack(padx=20, pady=5)
 
@@ -213,7 +218,7 @@ class Client:
         self.input_area = tkinter.Text(self.win, height=3)
         self.input_area.pack(padx=20, pady=5)
 
-        self.send_button = tkinter.Button(self.win, text="Send", command=lambda :self.write())
+        self.send_button = tkinter.Button(self.win, text="Send", command = lambda : self.write())
         self.send_button.config(font=("Arial", 12))
         self.send_button.pack(padx=20, pady=5)
 
@@ -227,8 +232,15 @@ class Client:
         self.sock.close()
         exit(0)
 
+    def send_on_click(self, event):
+        self.send_from_enter = True
+        self.write()
+
     def write(self):
         msg = f"{self.nickname} -> {self.friend} : {self.input_area.get('1.0', 'end')}"
+        if self.send_from_enter:
+            msg = msg[:-1]
+            self.send_from_enter = False
         self.sock.send(msg.encode('utf-8'))
         self.input_area.delete('1.0', 'end')
 
@@ -236,13 +248,15 @@ class Client:
         while self.running:
             try:
                 msg = self.sock.recv(1024).decode('utf-8')
-                if msg == 'NICK':
+                if msg == '#NICK':
                     self.sock.send(self.nickname.encode('utf-8'))
                 else:
-                    if self.gui_done:
+                    if self.gui_done and len(msg) > 0 and msg.split(" : ", 1)[0] in [self.friend, self.nickname]:
                         self.text_area.config(state='normal')
-                        msg += '\n'
+                        print(msg)
                         self.text_area.insert('end', msg)
+                        # if msg[-1] != '\n':
+                        #     self.text_area.insert('end', '\n')
                         self.text_area.yview('end')
                         self.text_area.config(state='disabled')
             except ConnectionAbortedError:
