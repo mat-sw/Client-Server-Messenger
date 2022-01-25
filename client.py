@@ -1,3 +1,4 @@
+from email import message
 from email.errors import FirstHeaderLineIsContinuationDefect
 import os
 import socket
@@ -8,10 +9,33 @@ from tkinter import simpledialog
 from tkinter import *
 import glob
 
-HOST = '127.0.0.1'
+HOST = '192.168.1.19'
 PORT = 9090
 
 
+def trim_recv_msg(message):
+    splitted = message.split(' : ', 1)
+    if splitted[1][0] == '\n':
+        return ""
+    end = 1
+    while splitted[1][end] != '\n':
+        end += 1
+    text = splitted[1][:end]
+    return " : ".join([splitted[0], text])
+
+
+def trim_send_msg(message):
+    splitted = message.split(' : ', 1)
+    if len(splitted[1]) <= 1:
+        return ""
+    start = 0
+    end = len(splitted[1])
+    while (splitted[1][start] in [' ', '\n']) and (start < len(splitted[1])):
+        start += 1
+    while splitted[1][end - 1] in [' ', '\n'] and end > start:
+        end -= 1
+    text = splitted[1][start:end]
+    return " : ".join([splitted[0], text])
 
 class Client:
 
@@ -90,10 +114,10 @@ class Client:
         self.running = True
         self.friend = friend
         
-        gui_thread = threading.Thread(target=self.gui_loop)
-        receive_thread = threading.Thread(target=self.receive)
-        gui_thread.start()
-        receive_thread.start()
+        self.gui_thread = threading.Thread(target=self.gui_loop)
+        self.receive_thread = threading.Thread(target=self.receive)
+        self.gui_thread.start()
+        self.receive_thread.start()
         print("receive")
 
 
@@ -104,13 +128,14 @@ class Client:
         self.friends_window.geometry("500x500")
         self.running = True
 
-        Label(self.friends_window, text = "Wybierz znajomego, do którego chcesz napisać", background="lightblue",
+        Label(self.friends_window, text = "Choose a friend with whom you want to chat", background="lightblue",
         width="200", height="2", font=("Calibri", 14)).pack(padx=5, pady=5)
 
         for n in self.list_of_files:
             splitted = n.split(".", 1)
-            Label(self.friends_window, text = f"Użytkownik: {splitted[0]}", font=("Calibri", 13)).pack()
-            Button(self.friends_window, text = f"Napisz do {splitted[0]}", font=("Calibri", 13), command = lambda splitted=splitted : self.start_messaging(splitted[0])).pack()
+            # Label(self.friends_window, text = f"Użytkownik: {splitted[0]}", font=("Calibri", 13)).pack()
+            if splitted[0] != self.nickname:
+                Button(self.friends_window, text = f"Chat with {splitted[0]}", font=("Calibri", 13), command = lambda splitted=splitted : self.start_messaging(splitted[0])).pack()
 
 
     def login_sucess(self):
@@ -170,13 +195,17 @@ class Client:
 
         else:
             self.user_not_found()
+    
+
+    def login_verification_OC(self, event):
+        self.login_verification()
 
 
     def login(self):
         self.login_screen = tkinter.Toplevel(self.login_window)
         self.login_screen.title("Login")
         self.login_screen.geometry("300x300")
-
+        self.login_screen.bind('<Return>', self.login_verification_OC)
 
         self.login_lab = tkinter.Label(self.login_screen, text="Please enter details below to login", bg="lightblue").pack(padx=20, pady=5)
 
@@ -202,13 +231,16 @@ class Client:
         self.win.bind('<Return>', self.send_on_click)
 
         self.chats.append(self.friend)
-        
+
         self.chat_label = tkinter.Label(self.win, text=f"Chat with {self.friend}:", bg="lightgray")
         self.chat_label.config(font=("Arial", 12))
         self.chat_label.pack(padx=20, pady=5)
 
         self.text_area = tkinter.scrolledtext.ScrolledText(self.win)
-        self.text_area.pack(padx=20, pady=5)
+        self.text_area.pack(fill='both', expand=True)
+        self.text_area.tag_configure('tag-right', justify='right')
+        self.text_area.tag_configure('tag-left', justify='left')
+        # self.text_area.grid(padx=2, pady=20)
         self.text_area.config(state='disabled')
 
         self.msg_label = tkinter.Label(self.win, text="Message:", bg="lightgray")
@@ -229,6 +261,8 @@ class Client:
     def stop(self):
         self.running = False
         self.win.destroy()
+        # print(self.gui_thread.isAlive())
+        self.gui_thread.join()
         self.sock.close()
         exit(0)
 
@@ -241,8 +275,10 @@ class Client:
         if self.send_from_enter:
             msg = msg[:-1]
             self.send_from_enter = False
-        self.sock.send(msg.encode('utf-8'))
-        self.input_area.delete('1.0', 'end')
+        if (len(msg)):
+            msg = trim_send_msg(msg)
+            self.sock.send((msg+'\n').encode('utf-8'))
+            self.input_area.delete('1.0', 'end')
 
     def receive(self):
         while self.running:
@@ -252,11 +288,20 @@ class Client:
                     self.sock.send(self.nickname.encode('utf-8'))
                 else:
                     if self.gui_done and len(msg) > 0 and msg.split(" : ", 1)[0] in [self.friend, self.nickname]:
+                        msg = trim_recv_msg(msg)
+                        splitted = msg.split(' : ', 1)
                         self.text_area.config(state='normal')
                         print(msg)
-                        self.text_area.insert('end', msg)
-                        # if msg[-1] != '\n':
-                        #     self.text_area.insert('end', '\n')
+                        if splitted[0] == self.nickname:
+                            label_me = Label(self.text_area, text=splitted[1], background='#ffffd0', justify='left', padx=10, pady=5)
+                            self.text_area.insert('end', '\n ', 'tag-right')
+                            self.text_area.window_create('end', window=label_me)
+                            # self.text_area.insert('end', splitted[1], 'tag-right')
+                        else:
+                            label_nme = Label(self.text_area, text=splitted[1], background='#d0ffff', justify='left', padx=10, pady=5)
+                            self.text_area.insert('end', '\n')
+                            self.text_area.window_create('end', window=label_nme)
+                            # self.text_area.insert('end', splitted[1])
                         self.text_area.yview('end')
                         self.text_area.config(state='disabled')
             except ConnectionAbortedError:

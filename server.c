@@ -99,17 +99,18 @@ void * socketThread(void *arg) {
         strncpy(message_out, message + receiver_end + 3, strlen(message) - receiver_end - 3);
         /* Prepares message to send */
         sprintf(message, "%s : %s", name, message_out);
-        printf("SENDING: %s\n", message);
+        // printf("SENDING: %s\n", message);
         /* Looking for the receiver and sends to him */
         for (int i = 0; i < cli_count; i++){
             if (!strcmp(clients[i]->name, receiver)) {
+                printf("SENDING %s to %s\n", message, clients[i]->name);
                 send(clients[i]->sockfd, message, BUFF_SIZE, 0);                
                 break;
             }
         }
-        // printf("SENDING: %s", message);
         /* Sends message back to sender*/
-        send(cli->sockfd, message, BUFF_SIZE, 0);
+        printf("SENDING %s to %s\n", message, cli->name);
+        send(cli->sockfd, message, strlen(message), 0);
         memset(&client_message, 0, BUFF_SIZE);
     }
     printf("Exit socketThread \n");
@@ -132,7 +133,7 @@ int main(){
     // Configure settings of the server address struct
     serverAddr.sin_family = AF_INET; 
     serverAddr.sin_port = htons(PORT);
-    serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serverAddr.sin_addr.s_addr = inet_addr("192.168.1.19"); // htonl(INADDR_ANY)
 
     memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
     bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
