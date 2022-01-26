@@ -89,24 +89,41 @@ class Client:
         self.password_entry.pack(padx=20, pady=5)
 
         self.reg_button = tkinter.Button(self.register_screen, text="Register", width=10, height=1, bg="lightblue", command = self.register_user).pack(padx=20, pady=5)
+        
+    def delete_user_exists(self):
+        self.user_exists_screen.destroy()
+
+    def user_already_exists(self):
+        self.user_exists_screen = tkinter.Toplevel(self.register_screen)
+        self.user_exists_screen.title("User already exists")
+        self.user_exists_screen.geometry("150x100")
+        Label(self.user_exists_screen, text = "User already exists", fg = "red", font=("calibri", 11)).pack()
+
+        Button(self.user_exists_screen, text = "OK", command = self.delete_user_exists).pack()
 
     """ Rejestrowanie użytkownika """
     def register_user(self):
         username_info = self.username.get()
         password_info = self.password.get()
 
+        self.list_of_files = [f for f in os.listdir() if f.endswith('.txt')]
         filename = "%s.txt" % username_info
 
-        file = open(filename, "w")
+        if filename in self.list_of_files:
+            self.user_already_exists()
+        else:
+            filename = "%s.txt" % username_info
 
-        file.write(username_info + "\n")
-        file.write(password_info)
-        file.close()
+            file = open(filename, "w")
 
-        self.username_entry.delete(0,END)
-        self.password_entry.delete(0,END)
+            file.write(username_info + "\n")
+            file.write(password_info)
+            file.close()
 
-        Label(self.register_screen, text = "Registration Success", fg = "green", font=("calibri", 11)).pack()
+            self.username_entry.delete(0,END)
+            self.password_entry.delete(0,END)
+
+            Label(self.register_screen, text = "Registration Success", fg = "green", font=("calibri", 11)).pack()
 
     """ Włączenie konwersacji ze znajomym """
     def start_messaging(self, friend):
