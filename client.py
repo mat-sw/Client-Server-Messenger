@@ -12,7 +12,7 @@ import glob
 HOST = '192.168.1.19'
 PORT = 9090
 
-
+""" Czyści wiadomość ze znaków białych na początku i na końcu + ewentualnie z dziwnych i niechcianych znaczków odbieranych z serwera """
 def trim_recv_msg(message):
     splitted = message.split(' : ', 1)
     if splitted[1][0] == '\n':
@@ -38,7 +38,6 @@ def trim_send_msg(message):
     return " : ".join([splitted[0], text])
 
 class Client:
-
     def __init__(self, host, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((host, port))
@@ -65,7 +64,7 @@ class Client:
 
         self.window.mainloop()
 
-
+    """ Rejestracja """
     def register(self):
         self.register_screen = tkinter.Toplevel(self.login_window)
         self.register_screen.title("Register")
@@ -91,7 +90,7 @@ class Client:
 
         self.reg_button = tkinter.Button(self.register_screen, text="Register", width=10, height=1, bg="lightblue", command = self.register_user).pack(padx=20, pady=5)
 
-
+    """ Rejestrowanie użytkownika """
     def register_user(self):
         username_info = self.username.get()
         password_info = self.password.get()
@@ -109,18 +108,18 @@ class Client:
 
         Label(self.register_screen, text = "Registration Success", fg = "green", font=("calibri", 11)).pack()
 
+    """ Włączenie konwersacji ze znajomym """
     def start_messaging(self, friend):
         self.gui_done = False
         self.running = True
         self.friend = friend
-        
+        """ Utworzenie wątków na główne okno czatu i na pętlę odbierania """
         self.gui_thread = threading.Thread(target=self.gui_loop)
         self.receive_thread = threading.Thread(target=self.receive)
         self.gui_thread.start()
         self.receive_thread.start()
-        print("receive")
 
-
+    """ Odnotowanie pomyślnego zalogowania """
     def delete_login_success(self):
         self.login_window.destroy()
         self.friends_window = tkinter.Tk()
@@ -134,10 +133,11 @@ class Client:
         for n in self.list_of_files:
             splitted = n.split(".", 1)
             # Label(self.friends_window, text = f"Użytkownik: {splitted[0]}", font=("Calibri", 13)).pack()
+            """ Pomijamy siebie """
             if splitted[0] != self.nickname:
                 Button(self.friends_window, text = f"Chat with {splitted[0]}", font=("Calibri", 13), command = lambda splitted=splitted : self.start_messaging(splitted[0])).pack()
 
-
+    """ Pop-up o pomyślnym zalogowaniu """
     def login_sucess(self):
         self.login_sucess_screen = tkinter.Toplevel(self.login_screen)
         self.login_sucess_screen.title("Success")
@@ -150,7 +150,7 @@ class Client:
     def delete_password_not_recognised(self):
         self.password_not_recog_screen.destroy()
 
-
+    """ Pop-up z informacją, że błędne hasło """
     def password_not_recognised(self):
         self.password_not_recog_screen = tkinter.Toplevel(self.login_screen)
         self.password_not_recog_screen.title("Unsuccess")
@@ -162,6 +162,7 @@ class Client:
     def delete_user_not_found_screen(self):
         self.user_not_found_screen.destroy()
 
+    """ Pop-up z informacją, że podano błędną nazwę użytkownika (Taki użytkownik nie jest zarejestrowany) """
     def user_not_found(self):
         self.user_not_found_screen = tkinter.Toplevel(self.login_screen)
         self.user_not_found_screen.title("Unsuccess")
@@ -170,6 +171,7 @@ class Client:
         Label(self.user_not_found_screen, text = "User not found", fg = "red", font=("calibri", 11)).pack()
         Button(self.user_not_found_screen, text = "OK", command = self.delete_user_not_found_screen).pack()
 
+    """ Weryfikacja logowania """
     def login_verification(self):
         username1 = self.username_verify.get()
         password1 = self.password_verify.get()
@@ -200,7 +202,7 @@ class Client:
     def login_verification_OC(self, event):
         self.login_verification()
 
-
+    """ Ekran logowania """
     def login(self):
         self.login_screen = tkinter.Toplevel(self.login_window)
         self.login_screen.title("Login")
@@ -223,7 +225,7 @@ class Client:
         Button(self.login_screen, text = "Login", width = 10, height = 1, command=self.login_verification).pack()
 
 
-
+    """ Pętla z oknem czatu """
     def gui_loop(self):
         self.win = tkinter.Tk()
         self.win.title(f"{self.nickname}'s chat")
@@ -240,7 +242,6 @@ class Client:
         self.text_area.pack(fill='both', expand=True)
         self.text_area.tag_configure('tag-right', justify='right')
         self.text_area.tag_configure('tag-left', justify='left')
-        # self.text_area.grid(padx=2, pady=20)
         self.text_area.config(state='disabled')
 
         self.msg_label = tkinter.Label(self.win, text="Message:", bg="lightgray")
@@ -261,15 +262,16 @@ class Client:
     def stop(self):
         self.running = False
         self.win.destroy()
-        # print(self.gui_thread.isAlive())
         self.gui_thread.join()
         self.sock.close()
         exit(0)
 
+    """ Wysłanie wiadomości na przycisk ENTER """
     def send_on_click(self, event):
         self.send_from_enter = True
         self.write()
 
+    """ Wysłanie wiadomości - pobranie tekstu z 'Input area', wytrymowanie go ze znaków białych a następnie wysłanie na socket """
     def write(self):
         msg = f"{self.nickname} -> {self.friend} : {self.input_area.get('1.0', 'end')}"
         if self.send_from_enter:
@@ -280,6 +282,7 @@ class Client:
             self.sock.send((msg+'\n').encode('utf-8'))
             self.input_area.delete('1.0', 'end')
 
+    """ Pętla na odbieranie wiadomości """
     def receive(self):
         while self.running:
             try:
@@ -292,16 +295,17 @@ class Client:
                         splitted = msg.split(' : ', 1)
                         self.text_area.config(state='normal')
                         print(msg)
+                        """ Sprawdzenie nadawcy i podział przyjaicel - na lewo, ja - na prawo """
                         if splitted[0] == self.nickname:
                             label_me = Label(self.text_area, text=splitted[1], background='#ffffd0', justify='left', padx=10, pady=5)
                             self.text_area.insert('end', '\n ', 'tag-right')
                             self.text_area.window_create('end', window=label_me)
-                            # self.text_area.insert('end', splitted[1], 'tag-right')
+                            # self.text_area.insert('end', msg)
                         else:
                             label_nme = Label(self.text_area, text=splitted[1], background='#d0ffff', justify='left', padx=10, pady=5)
                             self.text_area.insert('end', '\n')
                             self.text_area.window_create('end', window=label_nme)
-                            # self.text_area.insert('end', splitted[1])
+                            # self.text_area.insert('end', msg)
                         self.text_area.yview('end')
                         self.text_area.config(state='disabled')
             except ConnectionAbortedError:
